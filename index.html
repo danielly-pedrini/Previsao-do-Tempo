@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <title>Dev Tech - Previsão do Tempo</title>
+</head>
+
+<body>
+    <div class="main">
+        <div class="input-group">
+            <input id="cidade" placeholder="Digite aqui o nome da cidade">
+            <button onclick="CliqueiNoBotao()">
+                <img src="https://www.svgrepo.com/show/488200/find.svg" alt="Buscar" class="img-lupa">
+            </button>
+        </div>
+
+        <h1>Previsão do Tempo</h1>
+        <div class="nuvem">
+            <div>
+                <h3>Tempo não definido</h3>
+                <p>Umidade: --%</p>
+            </div>
+
+            <div>
+                <img src="./assets/icone-nuvem.png" alt="Ícone do tempo">
+                <h2>-- °C</h2>
+            </div>
+        </div>
+        
+        <div class="forecast-container">
+            <h3>Próximos Dias</h3>
+            <div class="forecast-cards" id="forecast-cards">
+
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
