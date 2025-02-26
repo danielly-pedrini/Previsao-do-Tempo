@@ -1,6 +1,8 @@
-const apiKey = "aff2e4c284d948779a842922252602 "; // Substitua pela sua chave da WeatherAPI
-const unsplashKey = "ODPOHhNsurZeye2K-HNn8i2RZ0j-J0oa9RmOg3n8PJs"; // Chave do Unsplash
+const apiKey = "aff2e4c284d948779a842922252602"; // Substitua pela sua chave válida da WeatherAPI
+const unsplashKey = "ODPOHhNsurZeye2K-HNn8i2RZ0j-J0oa9RmOg3n8PJs"; // Chave válida do Unsplash
+const imagemPadrao = "caminho_para_imagem_padrao.jpg"; // Defina um caminho para a imagem padrão
 
+// Atualiza a imagem de fundo com base no local pesquisado
 async function atualizarImagemFundo(local) {
     try {
         const response = await fetch(
@@ -10,25 +12,30 @@ async function atualizarImagemFundo(local) {
         if (!response.ok) throw new Error('Erro ao buscar imagem');
 
         const data = await response.json();
-        if (data.results && data.results.length > 0) {
-            const imageUrl = data.results[0].urls.regular;
+        const imageUrl = data.results.length > 0 ? data.results[0].urls.regular : imagemPadrao;
 
-            const img = new Image();
-            img.onload = function () {
-                document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('${imageUrl}')`;
-            };
-            img.src = imageUrl;
-        }
+        const img = new Image();
+        img.onload = function () {
+            document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('${imageUrl}')`;
+        };
+        img.onerror = function () {
+            document.body.style.backgroundImage = `url('${imagemPadrao}')`;
+        };
+        img.src = imageUrl;
     } catch (error) {
         console.error("Erro ao buscar imagem do local:", error);
+        document.body.style.backgroundImage = `url('${imagemPadrao}')`;
     }
 }
 
+// Formata a data de YYYY-MM-DD para DD/MM
 function formatarData(data) {
+    if (!data || !data.includes('-')) return "Data inválida";
     const partes = data.split('-');
     return `${partes[2]}/${partes[1]}`;
 }
 
+// Insere os dados do clima na tela
 function colocarDadosNaTela(dados) {
     const local = dados.location;
     const current = dados.current;
@@ -46,6 +53,7 @@ function colocarDadosNaTela(dados) {
     document.querySelector('.nuvem img').src = `https:${condicao.icon}`;
 }
 
+// Mostra a previsão para os próximos 3 dias
 function mostrarPrevisao3Dias(dados) {
     const container = document.getElementById('forecast-cards');
     container.innerHTML = '';
@@ -69,6 +77,7 @@ function mostrarPrevisao3Dias(dados) {
     });
 }
 
+// Busca os dados do clima na API
 async function buscarLocal(local) {
     try {
         const resposta = await fetch(
@@ -81,11 +90,11 @@ async function buscarLocal(local) {
         }
 
         const dados = await resposta.json();
-        
+
         colocarDadosNaTela(dados);
         await atualizarImagemFundo(dados.location.name);
         mostrarPrevisao3Dias(dados);
-        
+
         localStorage.setItem('ultimoLocal', local);
     } catch (error) {
         console.error("Erro ao buscar dados:", error);
@@ -93,23 +102,32 @@ async function buscarLocal(local) {
     }
 }
 
+// Ação ao clicar no botão ou pressionar Enter
 function CliqueiNoBotao() {
-    const local = document.getElementById("cidade").value.trim();
+    const input = document.getElementById("cidade");
+    const local = input.value.trim();
 
     if (local === "") {
         alert("Por favor, insira o nome de uma cidade, estado ou país!");
         return;
     }
 
+    if (local === localStorage.getItem('ultimoLocal')) {
+        alert("Essa cidade já está sendo exibida!");
+        return;
+    }
+
     buscarLocal(local);
 }
 
+// Permite buscar o clima pressionando Enter
 document.getElementById("cidade").addEventListener("keypress", function (e) {
     if (e.key === "Enter") {
         CliqueiNoBotao();
     }
 });
 
+// Carrega os últimos dados salvos ao iniciar a página
 window.onload = function () {
     const ultimoLocal = localStorage.getItem('ultimoLocal');
     if (ultimoLocal) {
