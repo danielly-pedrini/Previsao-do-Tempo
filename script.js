@@ -1,137 +1,132 @@
-const apiKey = "aff2e4c284d948779a842922252602"; // Substitua pela sua chave válida da WeatherAPI
-const unsplashKey = "ODPOHhNsurZeye2K-HNn8i2RZ0j-J0oa9RmOg3n8PJs"; // Chave válida do Unsplash
-const imagemPadrao = "caminho_para_imagem_padrao.jpg"; // Defina um caminho para a imagem padrão
+const apiKey = "a8636ac140394483127d5f228ec37703";
+const unsplashKey = "ODPOHhNsurZeye2K-HNn8i2RZ0j-J0oa9RmOg3n8PJs"; // Você precisará se registrar em https://unsplash.com/developers
 
-// Atualiza a imagem de fundo com base no local pesquisado
-async function atualizarImagemFundo(local) {
+
+async function atualizarImagemFundo(cidade) {
     try {
         const response = await fetch(
-            `https://api.unsplash.com/search/photos?query=${local}+landmark&client_id=${unsplashKey}&orientation=landscape&per_page=1`
+            `https://api.unsplash.com/search/photos?query=${cidade}+city+landmark&client_id=${unsplashKey}&orientation=landscape&per_page=1`
         );
 
-        if (!response.ok) throw new Error('Erro ao buscar imagem');
+        if (!response.ok) {
+            throw new Error('Erro ao buscar imagem');
+        }
 
         const data = await response.json();
-        const imageUrl = data.results.length > 0 ? data.results[0].urls.regular : imagemPadrao;
 
-        const img = new Image();
-        img.onload = function () {
-            document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('${imageUrl}')`;
-        };
-        img.onerror = function () {
-            document.body.style.backgroundImage = `url('${imagemPadrao}')`;
-        };
-        img.src = imageUrl;
+        if (data.results && data.results.length > 0) {
+            const imageUrl = data.results[0].urls.regular;
+
+
+            const img = new Image();
+            img.onload = function () {
+                document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('${imageUrl}')`;
+            };
+            img.src = imageUrl;
+        }
     } catch (error) {
-        console.error("Erro ao buscar imagem do local:", error);
-        document.body.style.backgroundImage = `url('${imagemPadrao}')`;
+        console.error("Erro ao buscar imagem da cidade:", error);
+
     }
 }
 
-// Formata a data de YYYY-MM-DD para DD/MM
-function formatarData(data) {
-    if (!data || !data.includes('-')) return "Data inválida";
-    const partes = data.split('-');
-    return `${partes[2]}/${partes[1]}`;
+
+window.onload = function () {
+    const ultimaCidade = localStorage.getItem('ultimaCidade');
+    if (ultimaCidade) {
+        document.getElementById('cidade').value = ultimaCidade;
+        buscarCidade(ultimaCidade);
+    }
 }
 
-// Insere os dados do clima na tela
+function formatarData(timestamp) {
+    const data = new Date(timestamp * 1000);
+    return data.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+}
+
 function colocarDadosNaTela(dados) {
-    const local = dados.location;
-    const current = dados.current;
-    const condicao = current.condition;
-
-    let nomeLocal = local.name;
-    if (local.region && local.region !== local.name) {
-        nomeLocal += `, ${local.region}`;
-    }
-
-    document.querySelector('h1').innerHTML = `Previsão do tempo em ${nomeLocal}`;
-    document.querySelector('.nuvem h2').innerHTML = `${Math.floor(current.temp_c)} °C`;
-    document.querySelector('.nuvem h3').innerHTML = condicao.text;
-    document.querySelector('.nuvem p').innerHTML = `Umidade: ${current.humidity} %`;
-    document.querySelector('.nuvem img').src = `https:${condicao.icon}`;
+    document.querySelector('h1').innerHTML = "Previsão do tempo em " + dados.name;
+    document.querySelector('.nuvem h2').innerHTML = Math.floor(dados.main.temp) + " °C";
+    document.querySelector('.nuvem h3').innerHTML = dados.weather[0].description;
+    document.querySelector('.nuvem p').innerHTML = "Umidade: " + dados.main.humidity + " %";
+    document.querySelector('.nuvem img').src = `https://openweathermap.org/img/wn/${dados.weather[0].icon}.png`;
 }
 
-// Mostra a previsão para os próximos 3 dias
-function mostrarPrevisao3Dias(dados) {
+function mostrarPrevisao5Dias(dados) {
     const container = document.getElementById('forecast-cards');
     container.innerHTML = '';
 
-    dados.forecast.forecastday.forEach((previsao) => {
-        const dia = formatarData(previsao.date);
-        const tempMax = Math.round(previsao.day.maxtemp_c);
-        const condicao = previsao.day.condition;
+    dados.list.forEach((previsao, index) => {
+        if (index % 8 === 0) {
+            const card = document.createElement('div');
+            card.className = 'forecast-card';
 
-        const card = document.createElement('div');
-        card.className = 'forecast-card';
+            card.innerHTML = `
+                <div class="date">${formatarData(previsao.dt)}</div>
+                <img src="https://openweathermap.org/img/wn/${previsao.weather[0].icon}.png" alt="Tempo">
+                <div class="temp">${Math.round(previsao.main.temp)}°C</div>
+                <div class="description">${previsao.weather[0].description}</div>
+            `;
 
-        card.innerHTML = `
-            <div class="date">${dia}</div>
-            <img src="https:${condicao.icon}" alt="Tempo">
-            <div class="temp">${tempMax}°C</div>
-            <div class="description">${condicao.text}</div>
-        `;
-
-        container.appendChild(card);
+            container.appendChild(card);
+        }
     });
 }
 
-// Busca os dados do clima na API
-async function buscarLocal(local) {
+async function buscarCidade(cidade) {
     try {
-        const resposta = await fetch(
-            `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${local}&days=3&aqi=no&alerts=no&lang=pt`
+
+        const respostaAtual = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${apiKey}&lang=pt_br&units=metric`
         );
 
-        if (!resposta.ok) {
-            if (resposta.status === 400) alert("Local não encontrado!");
-            throw new Error('Erro na API');
+        if (!respostaAtual.ok) {
+            if (respostaAtual.status === 404) {
+                alert("Cidade não encontrada!");
+            } else {
+                throw new Error('Erro na API');
+            }
+            return;
         }
 
-        const dados = await resposta.json();
+        const dadosAtuais = await respostaAtual.json();
+        colocarDadosNaTela(dadosAtuais);
 
-        colocarDadosNaTela(dados);
-        await atualizarImagemFundo(dados.location.name);
-        mostrarPrevisao3Dias(dados);
 
-        localStorage.setItem('ultimoLocal', local);
+        await atualizarImagemFundo(cidade);
+
+
+        const respostaPrevisao = await fetch(
+            `https://api.openweathermap.org/data/2.5/forecast?q=${cidade}&appid=${apiKey}&lang=pt_br&units=metric`
+        );
+
+        if (respostaPrevisao.ok) {
+            const dadosPrevisao = await respostaPrevisao.json();
+            mostrarPrevisao5Dias(dadosPrevisao);
+        }
+
+
+        localStorage.setItem('ultimaCidade', cidade);
     } catch (error) {
-        console.error("Erro ao buscar dados:", error);
+        console.error("Erro ao buscar dados: ", error);
         alert("Erro ao buscar dados do clima. Por favor, tente novamente mais tarde.");
     }
 }
 
-// Ação ao clicar no botão ou pressionar Enter
 function CliqueiNoBotao() {
-    const input = document.getElementById("cidade");
-    const local = input.value.trim();
+    const cidade = document.getElementById("cidade").value;
 
-    if (local === "") {
-        alert("Por favor, insira o nome de uma cidade, estado ou país!");
+    if (cidade.trim() === "") {
+        alert("Por favor, insira o nome de uma cidade!");
         return;
     }
 
-    if (local === localStorage.getItem('ultimoLocal')) {
-        alert("Essa cidade já está sendo exibida!");
-        return;
-    }
-
-    buscarLocal(local);
+    buscarCidade(cidade);
 }
 
-// Permite buscar o clima pressionando Enter
+
 document.getElementById("cidade").addEventListener("keypress", function (e) {
     if (e.key === "Enter") {
         CliqueiNoBotao();
     }
 });
-
-// Carrega os últimos dados salvos ao iniciar a página
-window.onload = function () {
-    const ultimoLocal = localStorage.getItem('ultimoLocal');
-    if (ultimoLocal) {
-        document.getElementById('cidade').value = ultimoLocal;
-        buscarLocal(ultimoLocal);
-    }
-};
