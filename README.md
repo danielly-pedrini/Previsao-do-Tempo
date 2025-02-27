@@ -1,7 +1,6 @@
-
-
-
 <h1> Previsão do Tempo </h1>
+
+<h2> 📋 Descrição </h2>
 
 Este é um aplicativo web de previsão do tempo que permite aos usuários obter informações meteorológicas atualizadas para qualquer cidade do mundo. 
 O aplicativo utiliza a API de previsão do tempo para fornecer dados precisos sobre temperatura, 
